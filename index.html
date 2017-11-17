@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Curricula variable</title>
+    <style>
+        .container {
+            max-width: 90%;
+            text-align: center;
+        }
+
+        ul {
+            margin: 0;
+            padding: 0;
+        }
+
+        .teacher-part ul {
+            float: left;
+            list-style: none;
+        }
+
+        .student-part ul {
+            float: right;
+            list-style: none;
+        }
+
+        #select-list {
+            visibility: hidden;
+            list-style: none;
+        }
+
+        .select-part {
+            max-width: 100px;
+            float: right;
+            margin: 0 40px;
+        }
+    </style>
+</head>
+<body>
+<div class="container" id="people-coll">
+    <div class="teacher-part">
+        <ul id="teacher-list"></ul>
+    </div>
+    <div class="student-part">
+        <ul id="student-list"></ul>
+    </div>
+    <div class="select-part">
+        <ul id="select-list"></ul>
+    </div>
+</div>
+<script>
+    /**
+     * extend函数用来模拟继承，解决子对象和父对象指向同一个对象，
+     * 子对象修改原型，父对象也会被修改的不足之处
+     * @param Child 子类
+     * @param Parent 父类
+     */
+    function extend(Child, Parent) {
+        var F = function () {
+        };
+        F.prototype = Parent.prototype;
+        Child.prototype = new F();
+        Child.prototype.constructor = Child;
+        Child.uber = Parent.prototype;
+    }
+
+    function People(name) {
+        this.name = name;
+        this.status = '';
+    }
+
+    function Student(name) {
+        People.call(this, name);
+        this.teacher = {};
+    }
+
+    extend(Student, People);
+    Student.prototype.selectCourse = function () {
+        var inClass = false;
+        if (this.teacher.students !== undefined) {
+            if (this.teacher.students.contains(this)) {
+                inClass = true;
+            }
+        }
+        if (inClass) {
+            alert("还有老师正在上课，不能选课");
+        } else {
+            //没有老师正在上课，学生可以选课
+            var selectList = document.getElementById('select-list');
+            selectList.style.visibility = "visible";
+            selectList.onclick = function () {
+                selectListener(event, this);
+            };
+        }
+    };
+
+    var selectList = document.getElementById('select-list');
+
+    function selectListener(event, student) {
+        var index = event.target.id.substring(
+            event.target.id.indexOf('-') + 1, event.target.id.length);
+        student.teacher = teachers[index];
+        selectList.style.visibility = "hidden";
+        student.teacher.students.push(student);
+    }
+
+
+    Student.prototype.talk = function () {
+        var inClass = false;
+        for (var tea in teachers) {
+            if (teachers[tea].status === 'inClass' && teachers[tea] === this.teacher) {
+                inClass = true;
+            }
+        }
+        if (inClass) {
+            alert("还有老师正在上课，不能说话");
+        } else {
+            alert('叽叽喳喳~~~');
+        }
+    };
+
+    function Teacher(name) {
+        People.call(this, name);
+        this.students = [];
+    }
+
+    extend(Teacher, People);
+    Teacher.prototype.beginClass = function () {
+        //TODO teacher begins a class, and disable other's function
+        this.status = 'inClass';
+    };
+    Teacher.prototype.endClass = function () {
+        //TODO teacher end a class, and other's functions resume;
+        this.status = '';
+    };
+
+    var students = [];
+    var teachers = [];
+
+    (function init() {
+        for (var s = 0; s < 6; s++) {
+            var student = new Student("学生" + s);
+            students.push(student);
+        }
+        for (var t = 0; t < 4; t++) {
+            var teacher = new Teacher("教师" + t);
+            teachers.push(teacher);
+        }
+        var studentList = document.getElementById('student-list');
+        var teacherList = document.getElementById('teacher-list');
+        for (var tea in teachers) {
+            var teacherItem = document.createElement('li');
+            teacherItem.setAttribute('id', 'tea' + tea);
+
+            var spanTeacherEle = document.createElement('span');
+            spanTeacherEle.setAttribute('id', 'tea-' + tea + '-span');
+            spanTeacherEle.innerText = teachers[tea].name;
+
+            var inputBeginEle = document.createElement('input');
+            inputBeginEle.setAttribute('type', 'button');
+            inputBeginEle.setAttribute('value', '上课');
+            inputBeginEle.setAttribute('id', 'tea-' + tea + '-begins');
+
+            var inputEndEle = document.createElement('input');
+            inputEndEle.setAttribute('type', 'button');
+            inputEndEle.setAttribute('value', '下课');
+            inputEndEle.setAttribute('id', 'tea-' + tea + '-ends');
+
+            teacherItem.appendChild(spanTeacherEle);
+            teacherItem.appendChild(inputBeginEle);
+            teacherItem.appendChild(inputEndEle);
+            teacherList.appendChild(teacherItem);
+
+            //初始化待选老师
+            var selectList = document.getElementById('select-list');
+            var selectItem = document.createElement('li');
+            selectItem.innerText = teachers[tea].name;
+            selectItem.setAttribute('id', 'teacher-' + tea);
+            selectList.appendChild(selectItem);
+        }
+        for (var stu in students) {
+            var studentItem = document.createElement('li');
+            studentItem.setAttribute('id', 'stu' + stu);
+
+            var spanStudentEle = document.createElement('span');
+            spanStudentEle.setAttribute('id', 'stu-' + stu + '-span');
+            spanStudentEle.innerText = students[stu].name;
+
+            var inputTalkEle = document.createElement('input');
+            inputTalkEle.setAttribute('type', 'button');
+            inputTalkEle.setAttribute('value', '说话');
+            inputTalkEle.setAttribute('id', 'stu-' + stu + '-talks');
+
+            var inputSelectEle = document.createElement('input');
+            inputSelectEle.setAttribute('type', 'button');
+            inputSelectEle.setAttribute('value', '选课');
+            inputSelectEle.setAttribute('id', 'stu-' + stu + '-selects');
+
+            studentItem.appendChild(spanStudentEle);
+            studentItem.appendChild(inputTalkEle);
+            studentItem.appendChild(inputSelectEle);
+            studentList.appendChild(studentItem);
+        }
+    })();
+
+    document.getElementById('people-coll')
+        .addEventListener('click', function (event) {
+            var whatKindOfButton = event.target.id.substring(
+                event.target.id.lastIndexOf('-') + 1, event.target.id.length);
+            var index = event.target.id.substr(
+                event.target.id.indexOf('-') + 1, 1);
+
+            switch (whatKindOfButton) {
+                case 'talks':
+                    students[index].talk();
+                    console.log('stu talks');
+                    break;
+                case 'selects':
+                    students[index].selectCourse();
+                    console.log('stu selects');
+                    break;
+                case 'ends':
+                    teachers[index].endClass();
+                    console.log('tea ends');
+                    break;
+                case 'begins':
+                    teachers[index].beginClass();
+                    console.log('tea begins');
+                    break;
+                default:
+                    console.warn('went to default!');
+            }
+        });
+</script>
+</body>
+</html>
