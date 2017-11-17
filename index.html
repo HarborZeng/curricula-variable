@@ -150,8 +150,9 @@
                 }
             }
             for (var stu in this.students) {
-                //正在准备录制
-                this.students[stu].switchSelf(false);
+                if (this.students[stu].teacher === this) {
+                    this.students[stu].switchSelf(false);
+                }
             }
         } else {
             alert("其他老师正在授课");
