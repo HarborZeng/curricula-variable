@@ -49,6 +49,9 @@
     </div>
 </div>
 <script>
+    var students = [];
+    var teachers = [];
+
     /**
      * extend函数用来模拟继承，解决子对象和父对象指向同一个对象，
      * 子对象修改原型，父对象也会被修改的不足之处
@@ -76,22 +79,14 @@
 
     extend(Student, People);
     Student.prototype.selectCourse = function () {
-        var inClass = false;
-        if (this.teacher.students !== undefined) {
-            if (this.teacher.students.contains(this)) {
-                inClass = true;
-            }
-        }
-        if (inClass) {
-            alert("还有老师正在上课，不能选课");
-        } else {
+
             //没有老师正在上课，学生可以选课
+            var student = this;
             var selectList = document.getElementById('select-list');
             selectList.style.visibility = "visible";
             selectList.onclick = function () {
-                selectListener(event, this);
+                selectListener(event, student);
             };
-        }
     };
 
     var selectList = document.getElementById('select-list');
@@ -119,23 +114,59 @@
         }
     };
 
+    Student.prototype.switchSelf = function (s) {
+        var idTalk = 'stu-' +
+            this.name.substring(2, this.name.length) + '-talks';
+        document.getElementById(idTalk).disabled = !s;
+        var idSelect = 'stu-' +
+            this.name.substring(2, this.name.length) + '-selects';
+        document.getElementById(idSelect).disabled = !s;
+    };
+
     function Teacher(name) {
         People.call(this, name);
         this.students = [];
     }
 
     extend(Teacher, People);
+
+    Teacher.prototype.switchSelf = function (s) {
+        document.getElementById(
+            'tea-' + this.name.substring(2, this.name.length) + '-begins')
+            .disabled = !s;
+    };
     Teacher.prototype.beginClass = function () {
-        //TODO teacher begins a class, and disable other's function
-        this.status = 'inClass';
+        var someoneIsTeaching = false;
+        for (var tea in teachers) {
+            if (teachers[tea].status === 'inClass') {
+                someoneIsTeaching = true;
+            }
+        }
+        if (!someoneIsTeaching) {
+            this.status = 'inClass';
+            for (var tea in teachers) {
+                if (this!==teachers[tea]) {
+                    teachers[tea].switchSelf(false);
+                }
+            }
+            for (var stu in this.students) {
+                //正在准备录制
+                this.students[stu].switchSelf(false);
+            }
+        } else {
+            alert("其他老师正在授课");
+        }
     };
     Teacher.prototype.endClass = function () {
-        //TODO teacher end a class, and other's functions resume;
         this.status = '';
+        for (var stu in this.students) {
+            //正在准备录制
+            this.students[stu].switchSelf(true);
+        }
+        for (var tea in teachers) {
+            teachers[tea].switchSelf(true);
+        }
     };
-
-    var students = [];
-    var teachers = [];
 
     (function init() {
         for (var s = 0; s < 6; s++) {
